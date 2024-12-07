@@ -23,6 +23,9 @@ def read_input(filepath, sample=False):
 def check_safe(row_raw: list, part:int) -> bool:
     '''
     Safe row should either be all increase or all decrease (by at most 3)
+
+    **Note**
+    Could improve this by looking for first failure and see if removing that or the prev one and rechecking would fix it
     '''
     if part == 1:
         row = row_raw
