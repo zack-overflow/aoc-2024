@@ -9,49 +9,39 @@ def read_input(filepath, sample=False):
         else:
             return None, np.genfromtxt(filepath, skip_header=0, dtype=str, delimiter=1)
 
-# Dictionary to define the next expected character in the word
-next_dict = {
-    'X': 'M',
-    'M': 'A',
-    'A': 'S'
-}
 
 def check_inbounds(grid, i, j):
     return 0 <= i < grid.shape[0] and 0 <= j < grid.shape[1]
 
-def dfs(grid, i, j, next, delta_i, delta_j, visited):
-    # Base case: if we reach the end of the word
-    if next is None:
-        return 1  # Found one instance of "XMAS"
-    
-    # Move to the next cell in the given direction
-    new_i, new_j = i + delta_i, j + delta_j
-    if (new_i, new_j) in visited:
-        return 0  # Avoid revisiting cells in this path
-    if not check_inbounds(grid, new_i, new_j) or grid[new_i][new_j] != next:
-        return 0  # Stop if out of bounds or character mismatch
-    
-    # Add current cell to visited and continue searching
-    visited.add((new_i, new_j))
-    count = dfs(grid, new_i, new_j, next_dict.get(next), delta_i, delta_j, visited)
-    visited.remove((new_i, new_j))  # Backtrack
-    
-    return count
+def check_A(grid, i, j):
+    # see if the A is the center of an X-mas
+    deltas = [-1, 1]
+    for delta_i in deltas:
+        for delta_j in deltas:
+            this_good = True
+
+            # check for an S in the spot defined by the deltas, WLOG
+            if check_inbounds(grid, i+delta_i, j+delta_j) and grid[i+delta_i][j+delta_j] == 'S':
+                M_diagonal = check_inbounds(grid, i-delta_i, j-delta_j) and grid[i-delta_i][j-delta_j] == 'M'
+                S_vertical = check_inbounds(grid, i-delta_i, j+delta_j) and grid[i-delta_i][j+delta_j] == 'S'
+                S_to_side = check_inbounds(grid, i+delta_i, j-delta_j) and grid[i+delta_i][j-delta_j] == 'S'
+                M_vertical = check_inbounds(grid, i-delta_i, j+delta_j) and grid[i-delta_i][j+delta_j] == 'M'
+                M_to_side = check_inbounds(grid, i+delta_i, j-delta_j) and grid[i+delta_i][j-delta_j] == 'M'
+
+                this_good = M_diagonal and ((S_to_side and M_vertical) or (S_vertical and M_to_side))
+
+                if this_good:
+                    return True
+                
+    return False
+
 
 def iterate_and_search(grid):
     total = 0
-    
-    # Look for all starting points ('X')
     for i in range(grid.shape[0]):
         for j in range(grid.shape[1]):
-            if grid[i][j] == 'X':
-                # Explore all 8 directions from the starting point
-                for delta_i in [-1, 0, 1]:
-                    for delta_j in [-1, 0, 1]:
-                        if delta_i == 0 and delta_j == 0:
-                            continue
-                        visited = {(i, j)}  # Mark starting cell as visited
-                        total += dfs(grid, i, j, 'M', delta_i, delta_j, visited)
+            if grid[i][j] == 'A':
+                total += check_A(grid, i, j)
     
     return total
 
@@ -71,4 +61,7 @@ def main(filename='sample', part=1):
     print(f'GRAND TOTAL: {num_instances}')
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) > 2:
+        main(sys.argv[1], int(sys.argv[2]))
+    else:
+        main(part=int(sys.argv[1]))
